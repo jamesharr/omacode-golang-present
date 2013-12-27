@@ -1,0 +1,149 @@
+Concurrency in Go
+For OMG-Code
+26 Dec 2013
+
+James Harr
+james.harr@gmail.com
+https://grickle.org
+@DNABlob
+
+* Presentation
+Only mostly ripped off from a [[http://www.youtube.com/watch?v=f6kdp27TYZs][2012 Google I/O Talk]].
+
+- Focus on concurrency using channels.
+- Introduce bits of the language, but not all of it.
+
+So, if Go captures your imagination:
+
+- This presentation is (or will be) on GitHub along with code.
+- There’s an interactive [[http://tour.golang.org/][tour]] and readable [[http://golang.org/doc/][docs]].
+- Plenty of [[http://www.youtube.com/results?search_query=golang][videos]] and [[http://research.swtch.com/gotour][screencasts]]. ([[http://www.youtube.com/watch?v=5kj5ApnhPAE][“Public Static Void”]]).
+
+* What is Go?
+
+- Practical, not academic.
+- Statically typed, but designed to not feel like it.
+- Garbage collected.
+- Quick to compile, runs quick.
+- Support concurrent programming (ala CSP).
+
+* A boring example
+.play boring1.go /^func boring/,/^}/
+
+* Less predictable boring
+.play boring2.go /^func boring/,/^}/
+
+* Enter the Goroutine
+.play boring3.go /START OMIT/,/END OMIT/
+
+What is it?
+
+- Independently executing function started by the ‘go’ command.
+- Same memory space, but has its own call stack.
+- Cheap. Very cheap. Easily have hundreds of thousands.
+- It’s not a thread, but they’re mux’d onto threads as needed.
+
+(and yes, that example is broken)
+
+* A terrible use of a goroutine
+.play boring4.go /START OMIT/,/END OMIT/
+
+* Channels
+
+.code channel-intro.go /BEGIN OMIT/,/END OMIT/
+
+* Pattern: Generator
+
+.code boring-gen1.go /func boring/,/^}/
+.play boring-gen1.go /func main/,/^}/
+
+* Pattern: Generator
+
+.play boring-gen2.go /func main/,/^}/
+
+* Enter `select {}`
+
+.code select1.go /func main/,/^}/
+- All channels are evaluated for readyness to communicate.
+- Selection blocks until one is ready to execute, which it then does.
+- If multiple are ready, one is executed at random.
+
+.code select1.go /func withDefault/,/^}/
+- Default case (if present) will execute immediately if no channels are ready.
+
+* Pattern: Fan-In
+
+.play boring-fanin1.go /func main/,/^}/
+.code boring-fanin1.go /func fanIn/,/^}/
+
+* Timing out
+.code select2.go /func main/,/^}/
+.code select2.go /package time/,/^}/
+
+* Pattern: Quit channel
+
+.code boring-fanin2.go /type Boring/,/^}/
+.code boring-fanin2.go /func boring/,/^}/
+
+* Pattern: Quit channel
+
+.code boring-fanin2.go /func fanIn/,/^}/
+
+* Pattern: Quit channel
+.play boring-fanin2.go /func main/,/^}/
+
+* Pattern: Quit & Wait
+
+.code boring-fanin3.go /func boring/,/^}/
+
+* Pattern: Quit & Wait
+
+.code boring-fanin3.go /inside fanIn/,/}/
+
+* Pattern: Quit & Wait
+.play boring-fanin3.go /func main/,/^}/
+
+* Example: Chinese whispers
+
+.image whispers.png
+
+* Example: Chinese whispers
+
+.code whispers.go /func whisperer/,/^}/
+
+* Example: Chinese whispers
+
+.play whispers.go /func main/,/^}/
+
+* Example: Expect library
+
+.code expect-example.go /func usage/,/^}/
+
+* Example: Expect library
+
+.code expect-example.go /func problem/,/^}/
+
+- PTY library does PTYs well enough.
+- No timeouts and API is blocking.
+- Easy to run into subtle buffering issues.
+
+* Example: Expect library
+
+.image expect.png
+
+* Example: Lock Manager
+
+Say you have a pile of external resources that:
+
+- Don't handle multiple sessions well.
+- Can be identified by name.
+
+Let's create a structure to manage access to these things.
+
+- It needs to be "thread safe".
+- but... Let's build it without locks.
+
+* Example: Lock Manager
+
+.image lock-manager.png
+
